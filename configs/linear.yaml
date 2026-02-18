@@ -1,0 +1,8 @@
+defaults:
+  - config
+  - method: supcon
+  - optim: linear
+  - _self_
+
+run_name: "supcon_linear_eval"
+pretrain_ckpt: ""

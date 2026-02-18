@@ -1,0 +1,7 @@
+name: "resnet18"
+cifar_stem: true
+
+projector:
+  depth: 2
+  hidden_dim: 2048
+  out_dim: 128

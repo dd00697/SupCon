@@ -1,0 +1,7 @@
+defaults:
+  - config
+  - method: supcon
+  - optim: ce
+  - _self_
+
+run_name: "ce_baseline"

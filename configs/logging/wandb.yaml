@@ -1,0 +1,7 @@
+enabled: true
+project: "supcon-cifar10"
+entity: null
+mode: "online"
+group: null
+tags: []
+notes: ""

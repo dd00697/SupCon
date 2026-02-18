@@ -1,0 +1,9 @@
+optimizer: "sgd"
+epochs: 100
+lr: 5.0
+momentum: 0.9
+weight_decay: 0.0
+warmup_epochs: 0
+min_lr: 0.0
+accum_steps: 1
+grad_clip: 0.0
