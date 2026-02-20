@@ -43,6 +43,21 @@ Note: these report numbers use explicit Hydra overrides and are different from t
 ### Conclusion
 On CIFAR-10 with ResNet-50, SupCon pretraining followed by linear probing matches and slightly exceeds a strong CE baseline in this reproduction.
 
+## W& BGraphs
+
+- Dataset is strictly `torchvision.datasets.CIFAR10`.
+- `train_supcon.py` is kept as a compatibility alias for `train_pretrain.py`.
+
+### Cross Entropy Run, Resnet 50, Batch Size 512
+<img width="1627" height="727" alt="image" src="https://github.com/user-attachments/assets/6f432b6b-22f9-4730-9b57-2d87e925cc47" />
+
+### Pretrain Run, Epochs 500, Batch Size 2048
+<img width="1659" height="366" alt="image" src="https://github.com/user-attachments/assets/11f67454-0c77-4156-8012-c1120f576029" />
+
+### Linear Probe, Epochs 100, Batch Size 2048
+<img width="1647" height="745" alt="image" src="https://github.com/user-attachments/assets/acb7e773-2644-4ae2-b601-35112e83e7a3" />
+
+
 ## What Is Implemented
 
 1. **CE baseline** (`train_ce.py`)
@@ -184,16 +199,3 @@ The next step is to run paper-aligned ablations around the main SupCon sensitivi
 | Backbone scale | `resnet18, resnet50` | Quantifies whether SupCon gains change with model capacity | `python train_pretrain.py -m model.name=resnet18,resnet50` |
 | Multi-seed stability | `seed=42,43,44` | Reports mean/std and reduces single-run noise | `python train_ce.py -m seed=42,43,44` and same for pretrain/linear |
 
-## Notes and W& B Graphs
-
-- Dataset is strictly `torchvision.datasets.CIFAR10`.
-- `train_supcon.py` is kept as a compatibility alias for `train_pretrain.py`.
-
-### Cross Entropy Run, Resnet 50, Batch Size 512
-<img width="1627" height="727" alt="image" src="https://github.com/user-attachments/assets/6f432b6b-22f9-4730-9b57-2d87e925cc47" />
-
-### Pretrain Run, Epochs 500, Batch Size 2048
-<img width="1659" height="366" alt="image" src="https://github.com/user-attachments/assets/11f67454-0c77-4156-8012-c1120f576029" />
-
-### Linear Probe, Epochs 100, Batch Size 2048
-<img width="1647" height="745" alt="image" src="https://github.com/user-attachments/assets/acb7e773-2644-4ae2-b601-35112e83e7a3" />
