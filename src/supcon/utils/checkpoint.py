@@ -8,7 +8,9 @@ import torch
 
 def save_checkpoint(state: Dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(state, path)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    torch.save(state, tmp_path)
+    tmp_path.replace(path)
 
 
 def load_checkpoint(path: Path, map_location: str = "cpu") -> Dict[str, Any]:

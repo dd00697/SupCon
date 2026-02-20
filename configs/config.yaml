@@ -11,6 +11,8 @@ amp: true
 deterministic: false
 print_freq: 50
 save_best: true
+resume: false
+resume_ckpt: ""
 output_dir: ${hydra:runtime.output_dir}
 
 hydra:

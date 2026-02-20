@@ -6,6 +6,7 @@ import hydra
 import torch
 import wandb
 from hydra.core.hydra_config import HydraConfig
+from hydra.utils import to_absolute_path
 from omegaconf import DictConfig, OmegaConf
 
 from supcon.data import build_cifar10_loaders
@@ -14,6 +15,7 @@ from supcon.models import ProjectionHead, build_encoder
 from supcon.train.pretrain import build_cosine_scheduler, train_one_epoch_pretrain
 from supcon.utils import (
     init_wandb,
+    load_checkpoint,
     log_wandb,
     patch_hydra_argparse,
     save_checkpoint,
@@ -66,9 +68,38 @@ def run_pretrain(cfg: DictConfig) -> None:
     scaler = torch.amp.GradScaler("cuda", enabled=amp_enabled)
 
     best_loss = float("inf")
+    best_epoch = 0
+    start_epoch = 1
     ckpt_dir = run_dir / "checkpoints"
+    resume_path = None
 
-    for epoch in range(1, int(cfg.optim.epochs) + 1):
+    if bool(cfg.resume):
+        if str(cfg.resume_ckpt):
+            resume_path = Path(to_absolute_path(str(cfg.resume_ckpt)))
+        else:
+            candidate = ckpt_dir / "last.ckpt"
+            if candidate.exists():
+                resume_path = candidate
+
+        if resume_path is not None and resume_path.exists():
+            resume_ckpt = load_checkpoint(resume_path, map_location="cpu")
+            encoder.load_state_dict(resume_ckpt["encoder_state"], strict=True)
+            projector.load_state_dict(resume_ckpt["projector_state"], strict=True)
+            optimizer.load_state_dict(resume_ckpt["optimizer_state"])
+            scheduler.load_state_dict(resume_ckpt["scheduler_state"])
+
+            scaler_state = resume_ckpt.get("scaler_state")
+            if scaler_state is not None:
+                scaler.load_state_dict(scaler_state)
+
+            best_loss = float(resume_ckpt.get("best_loss", best_loss))
+            best_epoch = int(resume_ckpt.get("best_epoch", best_epoch))
+            start_epoch = int(resume_ckpt.get("epoch", 0)) + 1
+            print(f"Resumed pretrain from: {resume_path} (next epoch: {start_epoch})")
+        else:
+            print("Resume requested but checkpoint was not found. Starting fresh training.")
+
+    for epoch in range(start_epoch, int(cfg.optim.epochs) + 1):
         current_lr = optimizer.param_groups[0]["lr"]
 
         train_stats = train_one_epoch_pretrain(
@@ -103,13 +134,20 @@ def run_pretrain(cfg: DictConfig) -> None:
             }
         )
 
+        is_best = train_stats["loss"] < best_loss
+        if is_best:
+            best_loss = float(train_stats["loss"])
+            best_epoch = epoch
+
         checkpoint = {
             "epoch": epoch,
             "encoder_state": encoder.state_dict(),
             "projector_state": projector.state_dict(),
             "optimizer_state": optimizer.state_dict(),
             "scheduler_state": scheduler.state_dict(),
+            "scaler_state": scaler.state_dict(),
             "best_loss": best_loss,
+            "best_epoch": best_epoch,
             "cfg": OmegaConf.to_container(cfg, resolve=True),
             "method_temp": float(cfg.method.temperature),
             "backbone": str(cfg.model.name),
@@ -117,13 +155,12 @@ def run_pretrain(cfg: DictConfig) -> None:
 
         save_checkpoint(checkpoint, ckpt_dir / "last.ckpt")
 
-        if cfg.save_best and train_stats["loss"] < best_loss:
-            best_loss = train_stats["loss"]
-            checkpoint["best_loss"] = best_loss
+        if cfg.save_best and is_best:
             save_checkpoint(checkpoint, ckpt_dir / "best.ckpt")
 
     if run is not None:
         wandb.summary["best_loss"] = best_loss
+        wandb.summary["best_epoch"] = best_epoch
         wandb.summary["run_dir"] = str(run_dir)
         wandb.finish()
 

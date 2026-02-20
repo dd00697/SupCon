@@ -5,6 +5,7 @@ num_workers: 8
 pin_memory: true
 train_subset: 0
 test_subset: 0
+val_size: 5000
 
 crop_size: 32
 scale_min: 0.2
